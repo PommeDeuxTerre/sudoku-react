@@ -1,11 +1,12 @@
 "use client"
 import { createContext, useContext, useState } from "react";
+import { Sudoku as SudokuGame } from "../utils/Sudoku";
 
-const SudokuContext = createContext(Array.from({length: 9}, ()=>Array(9).fill(0)));
-const SudokuSetGridContext = createContext((_:number[][])=>{});
+const SudokuContext = createContext(new SudokuGame());
+const SudokuSetGridContext = createContext((_:SudokuGame)=>{});
 
 export default function Sudoku() {
-    const [grid, setGrid] = useState(Array.from({length: 9}, ()=>Array(9).fill(0)) as number[][]);
+    const [grid, setGrid] = useState(new SudokuGame());
     return (
         <SudokuSetGridContext.Provider value={setGrid}>
             <SudokuContext.Provider value={grid}>
@@ -45,34 +46,16 @@ function SudokuSquare({y, x}: {y: number, x: number}) {
     const grid = useContext(SudokuContext);
     const setGrid = useContext(SudokuSetGridContext);
 
-    function is_move_valid(move: number): boolean {
-        // if cancel
-        if (move == 0)return true;
-
-        // horizontal
-        if (grid[y].includes(move))return false;
-        // vertical
-        if (Array(9).fill(0).map((_, i)=>grid[i][x]).includes(move))return false;
-        // square
-        if (Array(9).fill(0).map((_, i)=>grid[Math.floor(y / 3) * 3 + Math.floor(i / 3)][Math.floor(x / 3) * 3 + i % 3]).includes(move))return false;
-
-        return true;
-    }
-
     function update_grid(event: React.ChangeEvent<HTMLInputElement>){
-        const value = Number(event.target.value)
-
-        if (value < 0 || value > 9)return;
-        if (!is_move_valid(value))return;
-
-        grid[y][x] = value;
-        setGrid(grid.slice())
+        const move = Number(event.target.value)
+        grid.make_move(move, x, y);
+        setGrid(grid.clone());
     }
 
     return (
         <input
             className="w-full h-full border border-grey text-center"
-            value={grid[y][x] || ""}
+            value={grid.get(x, y) || ""}
             onChange={update_grid}
         />
     );
